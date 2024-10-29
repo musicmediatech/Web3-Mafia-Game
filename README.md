@@ -43,27 +43,36 @@ The user will have to login using his Metamask account then he can press a butto
 
 - Players can join game by paying the joining fee. We need 4 players to start game.
 - Assign role (only at the beginning)
-  **Night**
+
+**Night**
+
 - Assasins’s turn - choose somebody to kill
-  **Day**
+
+**Day**
+
 - Narrator’s conclusion from last night: “Last night a person was killed by
   the assassins. The person is {wallet address}.
 - The community debate and choose somebody to kill.”
 - Voting to kill - choose somebody available from the dropdown list to kill.
   _!!! The person that was kill doesn’t have the right to vote or be killed
   anymore !!!_
-- If every live players has the same vote, then the voting should be restarted with the note:
-  **"Voting restarted: One player must have more votes than the others"**
+- If every live players has the same vote, then the voting should be restarted with the note. **"Voting restarted: One player must have more votes than the others"**
+
 - Narrator displays voting results: “There were {number} amount of votes
   for {wallet address} and {number} amount of votes for {wallet address}. By
   the decision of the community, {wallet address} will be killed”
 - Exception: If the vote result is tie or no one voted after 60 seconds, then we should restart voting.
-  **Check for winners**
-  At this stage, 2/4 persons were killed.
+
+**Check for winners**
+
+At this stage, 2/4 persons were killed.
+
 - If the remaining persons are assassins, then display winner message to both assassins and end game
 - If the remaining persons are police officer and citizen, then display winner message to them and end game
 - If the remaining persons are 1 assassin and either the citizen or police officer displayer winner message to assassin and end game.
-  **Display winner message and end game**
+
+**Display winner message and end game**
+
 - Store prizez and claim them by the winners (when user presses start to chose a role, it will pay 0.1ETH, the game will start with 0.4ETH paid by each participant, when game is over, prize will be split between winners)
 
 ## Quickstart
@@ -97,6 +106,7 @@ yarn start
 ```
 
 Visit your app on: `http://localhost:3000`. You can interact with your smart contract using the `Debug Contracts` page. You can tweak the app config in `packages/nextjs/scaffold.config.ts`.
+
 **What's next**:
 
 - Edit your smart contract `YourContract.sol` in `packages/hardhat/contracts`
@@ -104,7 +114,3 @@ Visit your app on: `http://localhost:3000`. You can interact with your smart con
 - Edit your deployment scripts in `packages/hardhat/deploy`
 - Edit your smart contract test in: `packages/hardhat/test`. To run test use `yarn hardhat:test`
 - You can add your Alchemy API Key in `scaffold.config.ts` if you want more reliability in your RPC requests.
-
-## Documentation
-
-Visit our [docs](https://docs.scaffoldeth.io) to learn how to start building with Scaffold-ETH 2.
