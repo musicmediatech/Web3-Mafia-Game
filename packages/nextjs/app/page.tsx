@@ -306,36 +306,36 @@ const Home: NextPage = () => {
           )}
         </div>
 
-        {connectedAddress && (
-          <div className="flex-grow w-full mt-12 px-8 py-12">
-            <div className="flex justify-center items-center gap-12 flex-col sm:flex-row">
-              <div className="flex flex-col bg-base-100 px-10 py-10 text-center items-center max-w-2xl w-xl rounded-3xl">
-                <UsersIcon className="h-8 w-8 fill-secondary" />
-                <p>Joined Players: {playerAddresses.length}</p>
-                {players?.map((player, i) => (
-                  <div key={i} className="flex items-center space-x-2">
-                    <Address key={i} address={player.playerAddress} disableAddressLink />
-                    {player.playerAddress === connectedAddress && <span className="text-sm">(YOU)</span>}
-                    {!player.isAlive && <span className="text-sm">(DEAD)</span>}
-                  </div>
-                ))}
-              </div>
-              <div className="flex flex-col bg-base-100 px-10 py-10 text-center items-center max-w-lg rounded-3xl">
-                <ClockIcon className="h-8 w-8 fill-secondary" />
-                <p>Game State: {scaffoldConfig.gameState[currentState]?.state}</p>
-                <p>{scaffoldConfig.gameState[currentState]?.desc}</p>
-                {joined && currentState === 2 && <p>Your Role: {scaffoldConfig.roles[currentPlayer.role]}</p>}
-                {joined && currentState === 3 && (
-                  <p>
-                    Last Killed: {lastKilled}
-                    {lastKilled === currentPlayer.playerAddress && <span> (YOU)</span>}
-                  </p>
-                )}
-                {joined && currentState === 4 && winners.map((winner, i) => <Address key={i} address={winner} />)}
-              </div>
+        <div className="flex-grow w-full mt-12 px-8 py-12">
+          <div className="flex justify-center items-center gap-12 flex-col sm:flex-row">
+            <div className="flex flex-col bg-base-100 px-10 py-10 text-center items-center max-w-2xl w-xl rounded-3xl">
+              <UsersIcon className="h-8 w-8 fill-secondary" />
+              <p>Joined Players: {playerAddresses.length}</p>
+              {players?.map((player, i) => (
+                <div key={i} className="flex items-center space-x-2">
+                  <Address key={i} address={player.playerAddress} disableAddressLink />
+                  {player.playerAddress === currentPlayer.playerAddress && joined && (
+                    <span className="text-sm">(YOU)</span>
+                  )}
+                  {!player.isAlive && <span className="text-sm">(DEAD)</span>}
+                </div>
+              ))}
+            </div>
+            <div className="flex flex-col bg-base-100 px-10 py-10 text-center items-center max-w-lg rounded-3xl">
+              <ClockIcon className="h-8 w-8 fill-secondary" />
+              <p>Game State: {scaffoldConfig.gameState[currentState]?.state}</p>
+              <p>{scaffoldConfig.gameState[currentState]?.desc}</p>
+              {joined && currentState === 2 && <p>Your Role: {scaffoldConfig.roles[currentPlayer.role]}</p>}
+              {joined && currentState === 3 && (
+                <p>
+                  Last Killed: {lastKilled}
+                  {lastKilled === currentPlayer.playerAddress && joined && <span> (YOU)</span>}
+                </p>
+              )}
+              {joined && currentState === 4 && winners.map((winner, i) => <Address key={i} address={winner} />)}
             </div>
           </div>
-        )}
+        </div>
       </div>
     </>
   );
