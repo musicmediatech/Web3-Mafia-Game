@@ -24,19 +24,14 @@ contract MafiaGame {
 		bool isAlive;
 		bool hasVoted;
 	}
-	struct VoteResult {
-		address mostVoted;
-		uint highestVotes;
-		bool isTie;
-	}
 
 	Treasury public treasury;
 	GameState public currentState;
-
-	mapping(address => Player) public players;
-	mapping(address => uint) public votes;
+	address public activePlayer;
 	address[] public playerAddresses;
 	address[] public winners;
+	mapping(address => Player) public players;
+	mapping(address => uint) public votes;
 
 	uint public totalVotes;
 	uint public startTime;
@@ -57,8 +52,8 @@ contract MafiaGame {
 	event GameEnded(address[] winners);
 	event GameReset();
 
-	modifier onlyAlive() {
-		require(players[msg.sender].isAlive, "You are dead!");
+	modifier onlyActivePlayer() {
+		require(msg.sender == activePlayer, "Only active player allowed");
 		_;
 	}
 
@@ -67,22 +62,10 @@ contract MafiaGame {
 		_;
 	}
 
-	modifier onlyWinner(address caller) {
-		bool isWinner = false;
-		for (uint i = 0; i < winners.length; i++) {
-			if (winners[i] == caller) {
-				isWinner = true;
-				break;
-			}
-		}
-		require(isWinner, "Caller is not a winner!");
-		_;
-	}
-
-	modifier onlyAssassin() {
+	modifier onlyWinner() {
 		require(
-			players[msg.sender].role == Role.Assassin,
-			"You are not an assassin!"
+			winners.length > 0 && winners[0] == activePlayer,
+			"Caller is not the winner!"
 		);
 		_;
 	}
@@ -94,18 +77,39 @@ contract MafiaGame {
 
 	function joinGame() external payable onlyInState(GameState.Waiting) {
 		require(msg.value == 0.1 ether, "Must pay 0.1 ETH to join");
-		require(playerAddresses.length < 4, "Game is full");
-		require(
-			players[msg.sender].playerAddress == address(0),
-			"Player has already joined"
-		);
+		require(playerAddresses.length == 0, "Game already has active player");
 
-		players[msg.sender] = Player(msg.sender, Role.Citizen, true, false);
+		activePlayer = msg.sender;
 		playerAddresses.push(msg.sender);
+		players[msg.sender] = Player(msg.sender, Role.Assassin, true, false);
 		treasury.deposit{ value: msg.value }(msg.sender);
 
-		if (playerAddresses.length == 4) {
-			startGame();
+		addVirtualPlayers();
+		startGame();
+	}
+
+	function addVirtualPlayers() private {
+		require(
+			address(this).balance >= 0.3 ether,
+			"Insufficient balance for virtual players"
+		);
+
+		for (uint i = 1; i <= 3; i++) {
+			address virtualPlayer = address(uint160(i));
+			playerAddresses.push(virtualPlayer);
+			treasury.deposit{ value: 0.1 ether }(virtualPlayer);
+			players[virtualPlayer] = Player(
+				virtualPlayer,
+				Role(
+					i == 1
+						? Role.Assassin
+						: i == 2
+							? Role.Police
+							: Role.Citizen
+				),
+				true,
+				false
+			);
 		}
 	}
 
@@ -113,16 +117,8 @@ contract MafiaGame {
 		currentState = GameState.AssigningRoles;
 		startTime = block.timestamp;
 		emit GameStarted();
-		assignRoles();
-	}
 
-	function assignRoles() private {
-		players[playerAddresses[0]].role = Role.Assassin;
-		players[playerAddresses[1]].role = Role.Assassin;
-		players[playerAddresses[2]].role = Role.Police;
-		players[playerAddresses[3]].role = Role.Citizen;
-
-		for (uint256 i = 0; i < playerAddresses.length; i++) {
+		for (uint i = 0; i < playerAddresses.length; i++) {
 			emit RoleAssigned(
 				playerAddresses[i],
 				players[playerAddresses[i]].role
@@ -130,14 +126,12 @@ contract MafiaGame {
 		}
 
 		currentState = GameState.Night;
-		startTime = block.timestamp;
 	}
 
 	function assassinKill(
 		address target
-	) external onlyAssassin onlyInState(GameState.Night) onlyAlive {
+	) external onlyActivePlayer onlyInState(GameState.Night) {
 		require(players[target].isAlive, "Target is already dead!");
-		require(target != msg.sender, "Assassin cannot kill themselves!");
 
 		players[target].isAlive = false;
 		lastKilled = target;
@@ -148,60 +142,24 @@ contract MafiaGame {
 
 	function voteToKill(
 		address target
-	) external onlyAlive onlyInState(GameState.Day) {
-		require(!players[msg.sender].hasVoted, "You have already voted!");
+	) external onlyActivePlayer onlyInState(GameState.Day) {
 		require(players[target].isAlive, "Target is already dead!");
-
-		players[msg.sender].hasVoted = true;
+		players[activePlayer].hasVoted = true;
 		votes[target]++;
-		totalVotes++;
+		totalVotes = 3;
 
-		checkVoteResult();
-		emit PlayerVoted(msg.sender, target);
-	}
+		players[target].isAlive = false;
+		lastKilled = target;
+		currentState = GameState.Finalizing;
+		winners.push(activePlayer);
 
-	function checkVoteResult() private onlyAlive onlyInState(GameState.Day) {
-		VoteResult memory result = _tallyVotes();
-
-		if (!result.isTie && (totalVotes == 3 || hasStageEnded())) {
-			players[result.mostVoted].isAlive = false;
-			lastKilled = result.mostVoted;
-			currentState = GameState.Finalizing;
-			checkWinners();
-			emit DayNarration(result.mostVoted);
-		} else if (hasStageEnded()) {
-			resetVoting();
-			emit VotingRestarted();
-		}
-
-		emit VotingResult(result.mostVoted, result.highestVotes, result.isTie);
-	}
-
-	function _tallyVotes() private view returns (VoteResult memory) {
-		VoteResult memory result;
-		uint highestVotes = 0;
-		bool isTie = false;
-
-		for (uint i = 0; i < playerAddresses.length; i++) {
-			address player = playerAddresses[i];
-			if (players[player].isAlive) {
-				if (votes[player] > highestVotes) {
-					highestVotes = votes[player];
-					result.mostVoted = player;
-					isTie = false;
-				} else if (votes[player] == highestVotes && highestVotes > 0) {
-					isTie = true;
-				}
-			}
-		}
-
-		result.highestVotes = highestVotes;
-		result.isTie = isTie;
-		return result;
+		emit PlayerVoted(activePlayer, target);
+		emit DayNarration(target);
+		emit VotingResult(target, votes[target], false);
 	}
 
 	function resetVoting() private {
-		for (uint256 i = 0; i < playerAddresses.length; i++) {
+		for (uint i = 0; i < playerAddresses.length; i++) {
 			players[playerAddresses[i]].hasVoted = false;
 			votes[playerAddresses[i]] = 0;
 		}
@@ -209,65 +167,21 @@ contract MafiaGame {
 		startTime = block.timestamp;
 	}
 
-	function checkWinners() private {
-		uint256 aliveAssassins;
-		delete winners;
-
-		for (uint256 i = 0; i < playerAddresses.length; i++) {
-			if (!players[playerAddresses[i]].isAlive) continue;
-
-			Role role = players[playerAddresses[i]].role;
-
-			if (role == Role.Assassin) {
-				aliveAssassins++;
-			} else {
-				winners.push(playerAddresses[i]);
-			}
-		}
-
-		if (aliveAssassins > 0) {
-			delete winners;
-			for (uint256 i = 0; i < playerAddresses.length; i++) {
-				if (
-					players[playerAddresses[i]].isAlive &&
-					players[playerAddresses[i]].role == Role.Assassin
-				) {
-					winners.push(playerAddresses[i]);
-				}
-			}
-		}
-	}
-
 	function claimPrize()
 		external
-		onlyAlive
-		onlyWinner(msg.sender)
+		onlyActivePlayer
+		onlyWinner
 		onlyInState(GameState.Finalizing)
 	{
 		uint totalPrize = treasury.getBalance();
-		uint prizePerWinner = totalPrize / winners.length;
+		treasury.distributePrize(payable(activePlayer), totalPrize);
 
-		treasury.distributePrize(payable(msg.sender), prizePerWinner);
-		_removeWinner(msg.sender);
-
-		if (winners.length == 0) {
-			currentState = GameState.Finished;
-			resetGame();
-			emit GameEnded(winners);
-		}
+		currentState = GameState.Finished;
+		resetGame();
+		emit GameEnded(winners);
 	}
 
-	function _removeWinner(address winner) private {
-		for (uint i = 0; i < winners.length; i++) {
-			if (winners[i] == winner) {
-				winners[i] = winners[winners.length - 1];
-				winners.pop();
-				break;
-			}
-		}
-	}
-
-	function resetGame() private onlyInState(GameState.Finished) {
+	function resetGame() private {
 		for (uint i = 0; i < playerAddresses.length; i++) {
 			delete players[playerAddresses[i]];
 			delete votes[playerAddresses[i]];
@@ -275,29 +189,13 @@ contract MafiaGame {
 
 		treasury.resetBalances(playerAddresses);
 		delete playerAddresses;
-		delete lastKilled;
-		delete totalVotes;
 		delete winners;
+		delete lastKilled;
+		delete activePlayer;
+		totalVotes = 0;
 		startTime = 0;
 		currentState = GameState.Waiting;
-
 		emit GameReset();
-	}
-
-	function hasStageEnded() public view returns (bool) {
-		return (block.timestamp >= startTime + currentStageDuration());
-	}
-
-	function currentStageDuration() public view returns (uint) {
-		if (currentState == GameState.AssigningRoles) {
-			return 30 seconds;
-		} else if (currentState == GameState.Night) {
-			return 30 seconds;
-		} else if (currentState == GameState.Day) {
-			return 60 seconds;
-		} else {
-			return 0;
-		}
 	}
 
 	function getAllPlayers() public view returns (Player[] memory) {
@@ -309,10 +207,11 @@ contract MafiaGame {
 	}
 
 	function getAllWinners() public view returns (address[] memory) {
-		address[] memory allWinners = new address[](winners.length);
-		for (uint256 i = 0; i < winners.length; i++) {
-			allWinners[i] = winners[i];
-		}
+		address[] memory allWinners = new address[](1);
+		allWinners[0] = activePlayer;
+
 		return allWinners;
 	}
+
+	receive() external payable {}
 }
