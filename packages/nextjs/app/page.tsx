@@ -68,6 +68,9 @@ const Home: NextPage = () => {
       logs.map(log => {
         const { victim } = log.args as unknown as { victim: AddressType };
         console.log("📡 NightNarration: Last night a person was killed by the assassins. The person is", { victim });
+        notification.info(
+          `📡 NightNarration: Last night a person was killed by the assassins. The person is ${victim}`,
+        );
       });
     },
   });
@@ -118,6 +121,7 @@ const Home: NextPage = () => {
             <Address key={i} address={winner} disableAddressLink />
           ))} have claimed their winning prize.`,
         );
+        refetchState();
       });
     },
   });
@@ -209,6 +213,15 @@ const Home: NextPage = () => {
       if (connectedPlayer) {
         setCurrentPlayer(connectedPlayer);
       }
+    } else {
+      setPlayerAddresses([]);
+      setJoined(false);
+      setCurrentPlayer({
+        playerAddress: "",
+        role: 0,
+        isAlive: true,
+        hasVoted: false,
+      });
     }
   }, [players, connectedAddress]);
 
