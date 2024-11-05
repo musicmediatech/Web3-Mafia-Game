@@ -121,7 +121,6 @@ const Home: NextPage = () => {
             <Address key={i} address={winner} disableAddressLink />
           ))} have claimed their winning prize.`,
         );
-        refetchState();
       });
     },
   });
