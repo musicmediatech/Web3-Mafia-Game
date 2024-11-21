@@ -2177,6 +2177,7 @@ __metadata:
     autoprefixer: ^10.4.20
     blo: ^1.0.1
     burner-connector: ^0.0.8
+    crypto-keccak: ^3.0.9
     daisyui: 4.12.10
     eslint: ^8.15.0
     eslint-config-next: ^14.0.4
@@ -5381,6 +5382,18 @@ __metadata:
   version: 0.0.2
   resolution: "crypt@npm:0.0.2"
   checksum: baf4c7bbe05df656ec230018af8cf7dbe8c14b36b98726939cef008d473f6fe7a4fad906cfea4062c93af516f1550a3f43ceb4d6615329612c6511378ed9fe34
+  languageName: node
+  linkType: hard
+
+"crypto-keccak@npm:^3.0.9":
+  version: 3.0.9
+  resolution: "crypto-keccak@npm:3.0.9"
+  dependencies:
+    node-addon-api: ^2.0.0
+    node-gyp: latest
+    node-gyp-build: ^4.2.0
+    readable-stream: ^3.6.0
+  checksum: 992213565c85a451a8bc114ebc5bdc9dc5071387ec3ef1f5d97b6155f66fae1768f26beb337df758d29fa334982cd380eb33db316f854964a325d020ed28fd4f
   languageName: node
   linkType: hard
 
