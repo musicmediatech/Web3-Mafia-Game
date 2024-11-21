@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Address as AddressType } from "viem";
-import { useWriteContract } from "wagmi";
+import { useWaitForTransactionReceipt, useWriteContract } from "wagmi";
 import { CheckCircleIcon, ViewfinderCircleIcon } from "@heroicons/react/24/outline";
 import { useDeployedContractInfo, useTransactor } from "~~/hooks/scaffold-eth";
 import { ContractName } from "~~/utils/scaffold-eth/contract";
@@ -18,7 +18,8 @@ type SelectModererModalProps = {
 
 export const SelectModererModal = ({ addresses, modalId, contractName, refetchState }: SelectModererModalProps) => {
   const [selectedAddress, setSelectedAddress] = useState<AddressType>("");
-  const { writeContractAsync, isPending } = useWriteContract();
+  const { data: hash, writeContractAsync, isPending } = useWriteContract();
+  const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash });
   const writeTxn = useTransactor();
   const { data: mafiaContract } = useDeployedContractInfo(contractName);
 
@@ -43,7 +44,7 @@ export const SelectModererModal = ({ addresses, modalId, contractName, refetchSt
     <div>
       <label htmlFor={modalId} className="btn btn-primary btn-lg bg-base-100 gap-1">
         <ViewfinderCircleIcon className="h-6 w-6" />
-        <span>VOTE TO MODERATOR</span>
+        <span>VOTE TO KICK OUT</span>
       </label>
       <input type="checkbox" id={modalId} className="modal-toggle" />
       <label htmlFor={modalId} className="modal cursor-pointer">
@@ -73,12 +74,12 @@ export const SelectModererModal = ({ addresses, modalId, contractName, refetchSt
               <button
                 className="h-10 btn btn-primary btn-sm px-2 rounded-full"
                 onClick={() => handleVote()}
-                disabled={isPending}
+                disabled={isPending || isConfirming}
               >
-                {!isPending ? (
-                  <CheckCircleIcon className="h-6 w-6" />
-                ) : (
+                {isPending || isConfirming ? (
                   <span className="loading loading-spinner loading-sm"></span>
+                ) : (
+                  <CheckCircleIcon className="h-6 w-6" />
                 )}
                 <span>Vote</span>
               </button>
