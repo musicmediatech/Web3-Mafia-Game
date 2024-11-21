@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import type { NextPage } from "next";
 import { Address as AddressType, parseUnits } from "viem";
-import { useAccount, useReadContract, useWriteContract } from "wagmi";
+import { useAccount, useReadContract, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
 import { ArrowLeftEndOnRectangleIcon, ClockIcon, UsersIcon } from "@heroicons/react/24/outline";
 import { SelectModererModal, SelectPlayerModal } from "~~/components/MafiaGame";
 import { Address } from "~~/components/scaffold-eth";
@@ -46,7 +46,11 @@ const Home: NextPage = () => {
 
   const { address: connectedAddress } = useAccount();
   const { data: mafiaContract } = useDeployedContractInfo("MafiaGame");
-  const { writeContractAsync, isPending } = useWriteContract();
+  const { data: hash, writeContractAsync, isPending } = useWriteContract();
+  const { isLoading: isConfirming } = useWaitForTransactionReceipt({
+    hash,
+  });
+
   const writeTxn = useTransactor();
   const { targetNetwork } = useTargetNetwork();
 
@@ -247,9 +251,9 @@ const Home: NextPage = () => {
               <button
                 className="h-10 btn btn-primary rounded-full btn-lg bg-base-100 hover:bg-secondary gap-1"
                 onClick={handleJoin}
-                disabled={isPending}
+                disabled={isConfirming || isPending}
               >
-                {isPending ? (
+                {isConfirming || isPending ? (
                   <span className="loading loading-spinner loading-sm" />
                 ) : (
                   <ArrowLeftEndOnRectangleIcon className="h-6 w-6" />
@@ -264,9 +268,9 @@ const Home: NextPage = () => {
               <button
                 className="h-10 btn btn-primary rounded-full btn-lg bg-base-100 hover:bg-secondary gap-1"
                 onClick={handleClaimPrize}
-                disabled={isPending}
+                disabled={isConfirming || isPending}
               >
-                {isPending ? (
+                {isConfirming || isPending ? (
                   <span className="loading loading-spinner loading-sm" />
                 ) : (
                   <ArrowLeftEndOnRectangleIcon className="h-6 w-6" />
