@@ -1,4 +1,6 @@
 // @ts-check
+const createKeccakHash = require("crypto-keccak");
+const decryptHash = createKeccakHash("keccak256").digest().toString("hex");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
