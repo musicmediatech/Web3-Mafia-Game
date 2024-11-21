@@ -47,9 +47,7 @@ const Home: NextPage = () => {
   const { address: connectedAddress } = useAccount();
   const { data: mafiaContract } = useDeployedContractInfo("MafiaGame");
   const { data: hash, writeContractAsync, isPending } = useWriteContract();
-  const { isLoading: isConfirming } = useWaitForTransactionReceipt({
-    hash,
-  });
+  const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash });
 
   const writeTxn = useTransactor();
   const { targetNetwork } = useTargetNetwork();
