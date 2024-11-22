@@ -1,7 +1,7 @@
 # 🔫 𝕸𝖆𝖋𝖎𝖆 𝕲𝖆𝖒𝖊
 
 <h4 align="center">
-  <a href="https://docs.scaffoldeth.io">Game rules</a>
+  <a href="https://web3-mafia-game-demo.vercel.app/" target="_blank">Demo Game</a> | <a href="https://www.loom.com/share/b5f26284c81b4f0fab8813d5412079e5?sid=e5bbd1f1-55fd-4640-b80e-e14db675b17f" target="_blank">Watch Video Tutorial</a>
 </h4>
 This project has the purpose of proving that the Mafia game can be part of the web3 space. The game will use a Scaffold ETH template that uses NextJS and Hardhat. Most of the logic will sit off chain, but where it is possible, we can add the functionality on chain.
 🧪 DOD: Showcase that Mafia game can be integrated and played using Scaffold ETH by choosing from 3 roles (assassin, police officer, citizen), having a total of 4 players and only one team can win: assassins or the town.
